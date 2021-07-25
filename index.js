@@ -7,12 +7,18 @@ const Glob = require("glob");
 const Mime = require("mime");
 const { Upload } = require("@aws-sdk/lib-storage");
 const { S3Client } = require("@aws-sdk/client-s3");
+const envsubst = require("@tuplo/envsubst");
+const highlight = require("cli-highlight").highlight;
 
 const CWD = process.cwd();
 const [, , manifestPathRel] = process.argv;
 const manifestPathAbs = resolve(CWD, manifestPathRel || "manifest.yaml");
 const manifestRaw = readFileSync(manifestPathAbs, "utf-8");
-const manifestDocuments = parseAllDocuments(manifestRaw);
+const manifestRawEnvSubstd = envsubst(manifestRaw);
+
+console.log(highlight(manifestRawEnvSubstd, { language: "yaml" }));
+
+const manifestDocuments = parseAllDocuments(manifestRawEnvSubstd);
 const [manifest] = manifestDocuments.map((doc) => doc.toJSON());
 const manifestFlat = Object.keys(manifest)
   .filter((key) => key.indexOf(".") !== 0)
@@ -52,7 +58,12 @@ function upload({ files, s3, glob, tags, ...props }) {
         params: { ...target },
       });
 
-      return parallelUploads3.done();
+      console.log(`Uploading ${target.Key}...`);
+
+      return parallelUploads3.done().then((res) => {
+        console.log(`Done: ${target.Key} ==>> ${res.Location}`);
+        return res;
+      });
     })
   );
 }

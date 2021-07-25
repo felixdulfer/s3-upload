@@ -26,6 +26,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.23.0",
     "@aws-sdk/lib-storage": "^3.23.0",
+    "@tuplo/envsubst": "^1.13.0",
+    "cli-highlight": "^2.1.11",
     "glob": "^7.1.7",
     "mime": "^2.5.2",
     "yaml": "^1.10.2"

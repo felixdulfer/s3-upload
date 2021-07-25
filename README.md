@@ -4,8 +4,8 @@
 
 ## Prerequisites
 
-* Node
-* AWS S3 Credentials (TODO: Link to AWS CLI/env var setup)
+- Node
+- AWS S3 Credentials (TODO: Link to AWS CLI/env var setup)
 
 ## Usage
 
@@ -30,13 +30,22 @@ entry:
 Any yaml is OK, as long as [yaml](https://www.npmjs.com/package/yaml) supports
 it. This includes the use of anchors.
 
-### TODO: upload
+### Upload
 
 ```console
 $ s3-upload manifest.yaml
 ```
 
-### TODO: environment variables
+If you want to use a different AWS Profile that is configured in `~/.aws/`, then
+simply pass the name of the profile along using environment variables:
+
+```console
+$ AWS_PROFILE=my-profile s3-upload manifest.yaml
+```
+
+### Environment variables
+
+Environment variables in the yaml manifest will be replaced.
 
 ```yaml
 entry:
