@@ -1,5 +1,12 @@
 # s3-upload
 
+> Simple Amazon S3 upload CLI tool.
+
+## Prerequisites
+
+* Node
+* AWS S3 Credentials (TODO: Link to AWS CLI/env var setup)
+
 ## Usage
 
 ### Create a YAML manifest
