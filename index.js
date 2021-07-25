@@ -6,8 +6,9 @@ const Mime = require("mime");
 const { Upload } = require("@aws-sdk/lib-storage");
 const { S3Client } = require("@aws-sdk/client-s3");
 
-const manifestPath = resolve(__dirname, "test.yaml");
-const manifestRaw = readFileSync(manifestPath, "utf-8");
+const [, , manifestPathRel] = process.argv;
+const manifestPathAbs = resolve(__dirname, manifestPathRel || "manifest.yaml");
+const manifestRaw = readFileSync(manifestPathAbs, "utf-8");
 const manifestDocuments = parseAllDocuments(manifestRaw);
 const [manifest] = manifestDocuments.map((doc) => doc.toJSON());
 const manifestFlat = Object.keys(manifest)
