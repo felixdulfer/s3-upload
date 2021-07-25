@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 const { createReadStream, readFileSync } = require("fs");
 const { resolve, extname } = require("path");
 const { parseAllDocuments } = require("yaml");
@@ -6,8 +8,9 @@ const Mime = require("mime");
 const { Upload } = require("@aws-sdk/lib-storage");
 const { S3Client } = require("@aws-sdk/client-s3");
 
+const CWD = process.cwd();
 const [, , manifestPathRel] = process.argv;
-const manifestPathAbs = resolve(__dirname, manifestPathRel || "manifest.yaml");
+const manifestPathAbs = resolve(CWD, manifestPathRel || "manifest.yaml");
 const manifestRaw = readFileSync(manifestPathAbs, "utf-8");
 const manifestDocuments = parseAllDocuments(manifestRaw);
 const [manifest] = manifestDocuments.map((doc) => doc.toJSON());
@@ -29,7 +32,7 @@ function getFiles({ glob, ...props }) {
 function upload({ files, s3, glob, tags, ...props }) {
   return Promise.all(
     files.map((file) => {
-      const absFile = resolve(__dirname, glob.options.cwd, file);
+      const absFile = resolve(CWD, glob.options.cwd, file);
 
       const target = {
         ...s3,
