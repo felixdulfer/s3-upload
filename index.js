@@ -18,7 +18,10 @@ const manifestRawEnvSubstd = envsubst(manifestRaw);
 
 console.log(highlight(manifestRawEnvSubstd, { language: "yaml" }));
 
-const manifestDocuments = parseAllDocuments(manifestRawEnvSubstd);
+const manifestDocuments = parseAllDocuments(manifestRawEnvSubstd, {
+  merge: true,
+});
+
 const [manifest] = manifestDocuments.map((doc) => doc.toJSON());
 const manifestFlat = Object.keys(manifest)
   .filter((key) => key.indexOf(".") !== 0)
