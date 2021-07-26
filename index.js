@@ -16,6 +16,11 @@ const manifestPathAbs = resolve(CWD, manifestPathRel || "manifest.yaml");
 const manifestRaw = readFileSync(manifestPathAbs, "utf-8");
 const manifestRawEnvSubstd = envsubst(manifestRaw);
 
+console.log(`
+================================================================================
+YAML Manifest
+================================================================================
+`);
 console.log(highlight(manifestRawEnvSubstd, { language: "yaml" }));
 
 const manifestDocuments = parseAllDocuments(manifestRawEnvSubstd, {
@@ -23,11 +28,25 @@ const manifestDocuments = parseAllDocuments(manifestRawEnvSubstd, {
 });
 
 const [manifest] = manifestDocuments.map((doc) => doc.toJSON());
+
 const manifestFlat = Object.keys(manifest)
   .filter((key) => key.indexOf(".") !== 0)
   .map((key) => manifest[key])
   .map(({ manifest }) => manifest)
   .flat();
+
+console.log(`
+================================================================================
+JSON Manifest
+================================================================================
+`);
+console.log(highlight(JSON.stringify(manifestFlat, null, 2)));
+
+console.log(`
+================================================================================
+Upload
+================================================================================
+`);
 
 function getFiles({ glob, ...props }) {
   return new Promise((resolve, reject) => {
