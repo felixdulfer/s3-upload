@@ -56,3 +56,9 @@ entry:
         Bucket: ${MY_BUCKET}
         ...
 ```
+
+## Deploying new versions
+
+```console
+$ np
+```
