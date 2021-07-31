@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 const { createReadStream, readFileSync } = require("fs");
-const { resolve, extname } = require("path");
+const { resolve, extname, join } = require("path");
 const { parseAllDocuments } = require("yaml");
 const Glob = require("glob");
 const Mime = require("mime");
@@ -61,17 +61,18 @@ function upload({ files, s3, glob, tags, ...props }) {
   return Promise.all(
     files.map((file) => {
       const absFile = resolve(CWD, glob.options.cwd, file);
+      const { options, ...params } = s3;
 
       const target = {
-        ...s3,
-        Key: file,
+        ...params,
+        Key: join(options?.prefix ?? "", file),
         Body: createReadStream(absFile),
         ContentType: Mime.getType(extname(file)),
       };
 
       const parallelUploads3 = new Upload({
         client: new S3Client({
-          region: process.env.AWS_DEFAULT_REGION || "eu-central-1",
+          region: options?.client?.region ?? process.env.AWS_DEFAULT_REGION,
         }),
         tags: [...tags],
         queueSize: 4,
