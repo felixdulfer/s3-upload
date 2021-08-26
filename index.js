@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 const { createReadStream, readFileSync } = require("fs");
-const { resolve, extname, join } = require("path");
+const { resolve, extname, parse } = require("path");
 const { parseAllDocuments } = require("yaml");
 const Glob = require("glob");
 const Mime = require("mime");
@@ -9,12 +9,17 @@ const { Upload } = require("@aws-sdk/lib-storage");
 const { S3Client } = require("@aws-sdk/client-s3");
 const envsubst = require("@tuplo/envsubst");
 const highlight = require("cli-highlight").highlight;
+const Handlebars = require("handlebars");
 
 const CWD = process.cwd();
 const [, , manifestPathRel] = process.argv;
 const manifestPathAbs = resolve(CWD, manifestPathRel || "manifest.yaml");
 const manifestRaw = readFileSync(manifestPathAbs, "utf-8");
 const manifestRawEnvSubstd = envsubst(manifestRaw);
+
+const DEFAULT_TEMPLATE = "{{root}}/{{prefix}}/{{dir}}/{{name}}{{ext}}";
+const STRIP_DOUBLE_SLASHES_REGEXP = /\/\/+/;
+const STRIP_LEADING_SLASHES_REGEXP = /^\//;
 
 console.log(`
 ================================================================================
@@ -57,22 +62,46 @@ function getFiles({ glob, ...props }) {
   });
 }
 
+function rename({ files, s3, rename, ...props }) {
+  return {
+    files: files.map((file) => {
+      const {
+        options: { prefix },
+      } = s3;
+      const keyParsed = parse(file);
+      const keyTemplate = Handlebars.compile(rename ?? DEFAULT_TEMPLATE);
+      const keyDirty = keyTemplate({ ...keyParsed, prefix });
+      const keyClean = keyDirty
+        .replace(STRIP_DOUBLE_SLASHES_REGEXP, "/")
+        .replace(STRIP_LEADING_SLASHES_REGEXP, "");
+      const returnValue = { file, key: keyClean };
+      return returnValue;
+    }),
+    s3,
+    rename,
+    ...props,
+  };
+}
+
 function upload({ files, s3, glob, tags, ...props }) {
   return Promise.all(
-    files.map((file) => {
+    files.map(({ file, key }) => {
       const absFile = resolve(CWD, glob.options.cwd, file);
       const { options, ...params } = s3;
 
       const target = {
         ...params,
-        Key: join(options?.prefix ?? "", file),
+        Key: key,
         Body: createReadStream(absFile),
         ContentType: Mime.getType(extname(file)),
       };
 
       const parallelUploads3 = new Upload({
         client: new S3Client({
-          region: options?.client?.region ?? process.env.AWS_DEFAULT_REGION,
+          region:
+            options?.client?.region ??
+            process.env.AWS_REGION ??
+            process.env.AWS_DEFAULT_REGION,
         }),
         tags: [...tags],
         queueSize: 4,
@@ -96,9 +125,11 @@ void (async function main() {
     const files = await Promise.all(
       manifestFlat.map((entry) => getFiles(entry))
     );
-    console.dir(files, { depth: 3 });
     const uploaded = await Promise.all(
-      files.flat().map((entry) => upload(entry))
+      files
+        .flat()
+        .map((entry) => rename(entry))
+        .map((entry) => upload(entry))
     );
     console.dir({ uploaded }, { depth: 3 });
     console.log("All done!");
