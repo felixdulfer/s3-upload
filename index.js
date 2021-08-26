@@ -65,9 +65,7 @@ function getFiles({ glob, ...props }) {
 function rename({ files, s3, rename, ...props }) {
   return {
     files: files.map((file) => {
-      const {
-        options: { prefix },
-      } = s3;
+      const prefix = s3?.options?.prefix;
       const keyParsed = parse(file);
       const keyTemplate = Handlebars.compile(rename ?? DEFAULT_TEMPLATE);
       const keyDirty = keyTemplate({ ...keyParsed, prefix });
